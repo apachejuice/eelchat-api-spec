@@ -1,0 +1,83 @@
+swagger: "2.0"
+info:
+  title: Eelchat API
+  description: The API specification of the Eelchat chat platform.
+  version: 0.0.1
+host: eelchat.apachejuice.dev
+basePath: /api/v0
+schemes:
+  - https
+paths:
+  '/users/new':
+    post:
+      tags:
+        - users
+      summary: Create a new user
+      description: Creates a new unverified user in the chat server.
+      produces:
+        - application/json;charset=utf-8
+      consumes:
+        - application/json;charset=utf-8
+      parameters:
+        - in: body
+          name: user
+          description: The user to create
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        200:
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/User'
+        422:
+          description: Username, password or email did not meet requirements
+          schema:
+            $ref: '#/definitions/Error'
+        409: # All the 14776336 possible accounts with the same username are in use :D
+          description: User already exists and a discriminator could not be generated to differentiate
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Error: # general error object
+    type: object
+    properties:
+      message:
+        type: string
+        description: An error message
+        readOnly: true
+      component:
+        type: string
+        description: The component which failed
+        readOnly: true
+  User:
+    type: object
+    # These are all required when the object is sent to a server in a login event; registering additionally requires an email.
+    required:
+      - username
+      - password
+    properties:
+      username:
+        type: string
+        description: The username of the user
+      password:
+        type: string
+        description: The password of the user
+      email:
+        type: string
+        description: The email address of the user
+      id:
+        type: string
+        format: uuid
+        description: The unique user ID of the user
+        readOnly: true
+      # The discriminator exists to have more than one user with the same user name, e.g. 'user/ah8x' and 'user/09ch'
+      discriminator: # 4 chars, a-z, A-Z and numbers 0-9
+        type: string
+        maxLength: 4
+        minLength: 4
+        description: The discriminator of the user, so equivalent usernames can coexist
+        readOnly: true # randomly chosen by the server
